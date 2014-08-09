@@ -16,3 +16,12 @@ inadequate for your needs or wants, please feel free to submit patches or
 requests for features.
 
 ~ C.
+
+
+
+For Windows, edit the line 
+
+    handle = cdll.LoadLibrary(...)
+
+in _bindings.py to point to the fluidsynth library file.  In the demos, edit
+the synth.load_soundfont line to point to a soundfont on your drive.

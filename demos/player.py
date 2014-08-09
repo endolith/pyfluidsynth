@@ -14,7 +14,7 @@ settings.quality = "low"
 synth = fluidsynth.FluidSynth(settings)
 synth.load_soundfont(sys.argv[1])
 
-driver = fluidsynth.FluidAudioDriver(settings, synth)
+driver = fluidsynth.FluidAudioDriver(synth)
 
 player = fluidsynth.FluidPlayer(synth)
 

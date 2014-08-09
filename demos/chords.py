@@ -10,7 +10,7 @@ settings.quality = "low"
 synth = fluidsynth.FluidSynth(settings)
 synth.load_soundfont("double.sf2")
 
-driver = fluidsynth.FluidAudioDriver(settings, synth)
+driver = fluidsynth.FluidAudioDriver(synth)
 
 sequencer = fluidsynth.FluidSequencer()
 sequencer.beats_per_minute = 120

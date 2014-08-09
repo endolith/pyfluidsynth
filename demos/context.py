@@ -6,7 +6,7 @@ settings = fluidsynth.FluidSettings()
 
 synth = fluidsynth.FluidSynth(settings)
 
-driver = fluidsynth.FluidAudioDriver(settings, synth)
+driver = fluidsynth.FluidAudioDriver(synth)
 
 player = fluidsynth.FluidPlayer(synth)
 

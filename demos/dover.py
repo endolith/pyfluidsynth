@@ -10,7 +10,7 @@ settings.quality = "low"
 synth = fluidsynth.FluidSynth(settings)
 synth.load_soundfont("double.sf2")
 
-driver = fluidsynth.FluidAudioDriver(settings, synth)
+driver = fluidsynth.FluidAudioDriver(synth)
 
 seq = (79, 78, 79, 74, 79, 69, 79, 67, 79, 72, 79, 76,
        79, 78, 79, 74, 79, 69, 79, 67, 79, 72, 79, 76,
