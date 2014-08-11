@@ -3,6 +3,7 @@ import sys
 
 from ._bindings import FLUID_INT_TYPE, FLUID_NUM_TYPE, FLUID_STR_TYPE, handle
 
+
 def coerce_to_int(s):
     """
     Turn a string into an integer.
@@ -13,10 +14,12 @@ def coerce_to_int(s):
     except ValueError:
         return int(s.lower() not in ("false", "no", "off"))
 
+
 class FluidError(Exception):
     """
     Something bad happened.
     """
+
 
 class FluidSettings(object):
 
@@ -87,7 +90,13 @@ class FluidSettings(object):
             self["synth.reverb.active"] = "on"
             self["synth.sample-rate"] = 44100
 
+
 class FluidSynth(object):
+    """
+    Parameters
+    ----------
+    settings : FluidSettings object
+    """
 
     def __init__(self, settings):
         self._sf_dict = {}
@@ -98,7 +107,7 @@ class FluidSynth(object):
         failed = []
         for sf in self._sf_dict:
             if handle.fluid_synth_sfunload(self.synth, self._sf_dict[sf],
-                True):
+                                           True):
                 failed.append(sf)
         handle.delete_fluid_synth(self.synth)
 
@@ -106,63 +115,174 @@ class FluidSynth(object):
             raise FluidError("Couldn't unload soundfonts: %s" % failed)
 
     def load_soundfont(self, sf, reload_presets=True):
+        """
+        Load a SoundFont file (filename is interpreted by SoundFont loaders).
+
+        The newly loaded SoundFont will be put on top of the SoundFont stack.
+        Presets are searched starting from the SoundFont on the top of the
+        stack, working the way down the stack until a preset is found.
+
+        Parameters
+        ----------
+        sf : string
+            Filename of a soundfont to load
+        reload_presets : bool (optional)
+            True to re-assign presets for all MIDI channels (default)
+        """
         if sf in self._sf_dict:
             if (handle.fluid_synth_sfreload(self.synth, self._sf_dict[sf])
-                == -1):
+                    == -1):
                 raise FluidError("Couldn't reload soundfont %s" % sf)
         else:
             i = handle.fluid_synth_sfload(self.synth, sf, reload_presets)
             if i == -1:
-                raise FluidError, "Couldn't load soundfont %s" % sf
+                raise FluidError("Couldn't load soundfont %s" % sf)
             else:
                 self._sf_dict[sf] = i
 
     def unload_soundfont(self, sf, reload_presets=True):
+        """
+        Unload a SoundFont.
+
+        Parameters
+        ----------
+        sf
+            ID of SoundFont to unload
+        reload_presets : bool
+            True to re-assign presets for all MIDI channels (default)
+        """
         if sf not in self._sf_dict:
-            raise FluidError("Soundfont %s never loaded" % sf)
+            raise FluidError("Soundfont %s was never loaded" % sf)
         if handle.fluid_synth_sfunload(self.synth, self._sf_dict[sf],
-            reload_presets):
+                                       reload_presets):
             raise FluidError("Couldn't unload soundfont %s" % sf)
         else:
             del self._sf_dict[sf]
 
     def noteon(self, channel, pitch, velocity):
+        """
+        Send a note-on event to a FluidSynth object.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        pitch : int or float
+            MIDI note number (0-127 or float from 0.0 to 1.0)
+        velocity : int
+            MIDI velocity (0-127, 0 = noteoff)
+        """
         if isinstance(velocity, float):
             velocity = int(velocity * 127)
         handle.fluid_synth_noteon(self.synth, channel, pitch, velocity)
 
     def noteoff(self, channel, pitch):
+        """
+        Send a note-off event to a FluidSynth object.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        pitch : int
+            MIDI note number (0-127)
+        """
         handle.fluid_synth_noteoff(self.synth, channel, pitch)
 
     def cc(self, channel, control, value):
+        """
+        Send a MIDI controller event on a MIDI channel.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        control : int
+            MIDI controller number (0-127)
+        value : int
+            MIDI controller value (0-127)
+        """
         handle.fluid_synth_cc(self.synth, channel, control, value)
 
     control_change = cc
 
     def pitch_bend(self, channel, value):
+        """
+        Set the MIDI pitch bend controller value on a MIDI channel.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        value : int
+            MIDI pitch bend value (0-16383 with 8192 being center)
+        """
         handle.fluid_synth_pitch_bend(self.synth, channel, value)
 
     def pitch_wheel_sens(self, channel, value):
+        """
+        Set MIDI pitch wheel sensitivity on a MIDI channel.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        value : int
+            Pitch wheel sensitivity value in semitones
+        """
         handle.fluid_synth_pitch_wheel_sens(self.synth, channel, value)
 
     pitch_wheel_sensitivity = pitch_wheel_sens
 
     def program_change(self, channel, program):
+        """
+        Send a program change event on a MIDI channel.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        program : int
+            MIDI program number (0-127)
+        """
         handle.fluid_synth_program_change(self.synth, channel, program)
 
     def bank_select(self, channel, bank):
+        """
+        Set instrument bank number on a MIDI channel.
+
+        Parameters
+        ----------
+        channel : int
+            MIDI channel number (0 to MIDI channel count - 1)
+        bank : int
+            MIDI bank number
+        """
         handle.fluid_synth_bank_select(self.synth, channel, bank)
 
+
 class FluidAudioDriver(object):
+    """
+    Parameters
+    ----------
+    settings : FluidSynth object
+    """
+
     def __init__(self, synth):
         self.audio_driver = handle.new_fluid_audio_driver(
-                synth.settings.settings, synth.synth)
+            synth.settings.settings, synth.synth)
         self.synth = synth
 
     def __del__(self):
         handle.delete_fluid_audio_driver(self.audio_driver)
 
+
 class FluidPlayer(object):
+    """
+    Parameters
+    ----------
+    settings : FluidSynth object
+    """
 
     paused = True
 
@@ -196,6 +316,7 @@ class FluidPlayer(object):
     def pause(self):
         self.play() if self.paused else self.stop()
         self.paused = not self.paused
+
 
 class FluidEvent(object):
 
@@ -248,6 +369,7 @@ class FluidEvent(object):
 
     def pc(self, a, b):
         handle.fluid_event_program_change(self.event, a, b)
+
 
 class FluidSequencer(dict):
 
@@ -320,7 +442,7 @@ class FluidSequencer(dict):
 
     def send(self, event, timestamp, absolute=True):
         handle.fluid_sequencer_send_at(self.seq, event.event, timestamp,
-            absolute)
+                                       absolute)
 
     def send_right_now(self, event):
         handle.fluid_sequencer_send_now(self.seq, event.event)
